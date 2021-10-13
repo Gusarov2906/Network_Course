@@ -3,9 +3,8 @@
 
 UdpClient::UdpClient(QWidget* wgt) : QWidget(wgt)
 {
-    portIn = 5001;
-    portOut = 5000;
-
+    portIn = 55;
+    portOut = 90000;
     m_udpInSock = new QUdpSocket(this);
     m_udpOutSock = new QUdpSocket(this);
 
@@ -18,16 +17,22 @@ void UdpClient::bindPortIn(int port)
     m_udpInSock->bind(QHostAddress::LocalHost, portIn);
 }
 
-void UdpClient::bindPortOut(int port)
+void UdpClient::sendHelloServer()
 {
-    portOut = port;
-    m_udpOutSock->bind(QHostAddress::LocalHost, portOut);
+    slotSendDatagram("Hello server");
+}
+
+void UdpClient::setName(QString name)
+{
+    this->name = name;
 }
 
 void UdpClient::slotProcessDatagram()
 {
     QString data;
+    QString senderName;
     QByteArray baDatagram;
+
     do
     {
         baDatagram.resize(m_udpInSock->pendingDatagramSize());
@@ -38,8 +43,8 @@ void UdpClient::slotProcessDatagram()
     QDateTime dateTime;
     QDataStream in(&baDatagram, QIODevice::ReadOnly);
     in.setVersion(QDataStream::Qt_5_15);
-    in >> dateTime >> data;
-    QString str = "Received: " + dateTime.toString() + " " + data;
+    in >> dateTime >> data >> senderName;
+    QString str = senderName + " " + dateTime.toString() + " " + data;
     emit showData(str);
 }
 
@@ -49,11 +54,16 @@ void UdpClient::slotSendDatagram(QString data)
     QDataStream out(&baDatagram, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_5_15);
     QDateTime dt = QDateTime::currentDateTime();
-    QString str = "Send: " + dt.toString()  + " " + data;
-    out << dt << data;
-
-    bindPortIn(portIn);
+    out << dt << data << portIn << this->name;
+    QString str = this->name + " " + dt.toString()  + " " + data + " ";
     m_udpOutSock->writeDatagram(baDatagram, QHostAddress::LocalHost, portOut);
 
+
     emit showData(str);
+}
+
+void UdpClient::disconnectPort()
+{
+    m_udpInSock->disconnectFromHost();
+    m_udpOutSock->disconnectFromHost();
 }

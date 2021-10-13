@@ -5,6 +5,7 @@
 #include <QUdpSocket>
 #include <QTimer>
 #include <QDateTime>
+#include <QSet>
 
 class UdpServer : public QWidget
 {
@@ -14,19 +15,18 @@ private:
     QUdpSocket* m_udpInSock;
     QUdpSocket* m_udpOutSock;
     int portIn;
-    int portOut;
+    QSet<int> portOut;
 
 public:
     UdpServer(QWidget* wgt = 0);
     void bindPortIn(int port);
-    void bindPortOut(int port);
 
 signals:
     void showData(QString );
 
 private slots:
     void slotProcessDatagram();
-    void slotSendDatagram(QString data);
+    void slotSendDatagram(QString data, QString name, int portFrom);
 
 };
 

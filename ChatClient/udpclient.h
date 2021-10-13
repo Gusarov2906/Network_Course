@@ -12,14 +12,18 @@ Q_OBJECT
 private:
     QUdpSocket* m_udpInSock;
     QUdpSocket* m_udpOutSock;
+
     int portIn;
     int portOut;
+
+    QString name;
 
 public:
     UdpClient(QWidget* wgt = 0);
     void bindPortIn(int port);
-    void bindPortOut(int port);
-
+    void sendHelloServer();
+    void setName(QString name);
+    void disconnectPort();
 signals:
     void showData(QString);
 

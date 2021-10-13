@@ -3,8 +3,7 @@
 
 UdpServer::UdpServer(QWidget* wgt) : QWidget(wgt)
 {
-    portIn = 5000;
-    portOut = 5001;
+    portIn = 90000;
 
     m_udpInSock = new QUdpSocket(this);
     m_udpOutSock = new QUdpSocket(this);
@@ -20,16 +19,12 @@ void UdpServer::bindPortIn(int port)
     m_udpInSock->bind(QHostAddress::LocalHost, portIn);
 }
 
-void UdpServer::bindPortOut(int port)
-{
-    portOut = port;
-    m_udpOutSock->bind(QHostAddress::LocalHost, portOut);
-}
-
 void UdpServer::slotProcessDatagram()
 {
     QString data;
+    QString name;
     QByteArray baDatagram;
+    int port;
     do
     {
         baDatagram.resize(m_udpInSock->pendingDatagramSize());
@@ -40,24 +35,31 @@ void UdpServer::slotProcessDatagram()
     QDateTime dateTime;
     QDataStream in(&baDatagram, QIODevice::ReadOnly);
     in.setVersion(QDataStream::Qt_5_15);
-    in >> dateTime >> data;
-    QString str = "Received: " + dateTime.toString() + " " + data;
+
+    in >> dateTime >> data >> port >> name;
+
+    QString str = "Received: " + name + " "  + dateTime.toString() + " " + data + " " + QString::number(port);
+    portOut.insert(port);
     emit showData(str);
-    slotSendDatagram(data);
+    slotSendDatagram(data, name, port);
 }
 
-void UdpServer::slotSendDatagram(QString data)
+void UdpServer::slotSendDatagram(QString data, QString name, int portFrom)
 {
     QByteArray baDatagram;
     QDataStream out(&baDatagram, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_5_15);
     QDateTime dt = QDateTime::currentDateTime();
-    QString str = "Send: " + dt.toString() + " " + data;
-    out << dt << data;
+    QString str;
 
-    bindPortOut(portOut);
-    m_udpOutSock->writeDatagram(baDatagram, QHostAddress::LocalHost, portOut);
-    m_udpOutSock->disconnectFromHost();
-
-    emit showData(str);
+    for(int port : qAsConst(portOut))
+    {
+        if (port != portFrom)
+        {
+            str = "Send: " + name + " " + dt.toString() + " " + data + " " + QString::number(port);
+            out << dt << data << name;
+            m_udpOutSock->writeDatagram(baDatagram, QHostAddress::LocalHost, port);
+            emit showData(str);
+        }
+    }
 }
