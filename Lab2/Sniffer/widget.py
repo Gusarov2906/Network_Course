@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 import sys
+import socket
 from scapy.all import sniff, IP, TCP, UDP, Raw, ICMP, sr
 import datetime
 import threading
@@ -20,7 +21,7 @@ class Widget(QWidget):
 
     def _sniff(self, e):
         sniff(prn=self.network_sniff,
-              filter="host 192.168.1.101",
+              filter="host " + socket.gethostbyname(socket.gethostname()),
               stop_filter=lambda p: e.is_set())
 
     def load_ui(self):
